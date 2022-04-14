@@ -1,0 +1,55 @@
+SECTION .data
+array db 0,1,2,3,4,5,6,7,8,9 ;'0','1','2','3','4','5','6','7','8','9' ;
+array_lenght equ $-array
+msg db '',0xa
+msgLength equ $ - msg
+
+SECTION .text
+global _start
+_start:
+
+    mov esi, array ; заносим ссылки (элементы из массива) в следующем цикле
+    mov ecx, array_lenght ; продолжительность цикла
+
+stack_push:   	
+    lodsb		;Команда LODSB копирует один байт из памяти по адресу DS:SI в регистр AL
+                ;Если команда используется в 32-разрядном режиме адресации, то используется регистр ESI.
+                ;https://sysprog.ru/post/komandy-lods-lodsb-lodsw-lodsd
+                
+    push ax		;СОХРАНЯЕМ В СТЭКЕ ЗНАЧЕНИЕ ИЗ AL (НО ТАК КАК PUSH 16-BIT, ЗАПИСЫВАЕМ AX)
+    loop stack_push
+    
+mov edi, array ;записываем по ссылкам в следующем цикле
+mov ecx, array_lenght ; продолжительность цикла
+
+stack_pop:
+    pop ax
+    stosb		;Команда STOSB сохраняет регистр AL в ячейке памяти по адресу ES:DI. (ESI:EDI)
+                ;Если команда используется в 32-разрядном режиме адресации, то используется регистр EDI.
+                ;https://sysprog.ru/post/komandy-stos-stosb-stosw-stosd
+    loop stack_pop
+
+mov esi, 0 ; начинаем отчет с 0 элемента
+mov ecx, array_lenght ; продолжительность цикла
+
+output_logic:
+    
+    push ecx
+    mov ecx, [array + esi]
+    inc esi
+    add ecx, 48
+    mov [msg], ecx
+    mov edx, msgLength
+    mov ecx, msg
+    mov ebx, 1
+    mov eax, 4
+    int 0x80
+    pop ecx
+    
+    loop output_logic
+    
+exit:
+    nop
+    mov eax, 1
+    mov ebx, 0
+    int 80H
